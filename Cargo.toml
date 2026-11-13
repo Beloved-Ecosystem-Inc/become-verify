@@ -1,0 +1,16 @@
+[package]
+name = "become-verify"
+version = "0.1.0"
+edition = "2021"
+description = "Verify-only checker for BECOME certified ground-state energy proofs (SP1 6.8.1 Groth16, main_xc)"
+license = "Apache-2.0"
+publish = false
+
+# Pure-Rust Groth16 verifier only; no prover, no network.
+[dependencies]
+sp1-verifier = "=6.8.1"
+sha2 = "=0.10.9"
+
+[[bin]]
+name = "become-verify"
+path = "src/main.rs"
