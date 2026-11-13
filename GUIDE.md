@@ -8,19 +8,23 @@ on your own computer. Nothing is sent anywhere and nothing about BECOME has to b
 
 | When | File |
 |---|---|
-| With the completion notice | `proof.bin` (the completion proof: bounds sealed) |
-| After payment | `proof.bin` (the final proof: bounds revealed) |
+| With the completion ("target met") notice | `completion.bin` (the completion proof: bounds sealed) |
+| After payment | `final.bin` (the final proof: bounds revealed) |
 
-Each `proof.bin` is a standard SP1 6.8.1 proof file: a Groth16 proof plus its 200 bytes of public values. Both are
+Each is a standard SP1 6.8.1 proof file (`SP1ProofWithPublicValues`; your job page may call both `proof.bin`): a Groth16 proof plus its 200 bytes of public values. Both are
 checked against one fixed program key, built into the checker:
 
     0x002904457a39ce1123f797598dfbac0fd12d7844be883c7154f37de353c81a2b
 
 ## Build the checker
 
-Install Rust (https://rustup.rs), then in the `verifier/` folder:
+Install Rust (https://rustup.rs), then in this repository's folder (the one with `Cargo.toml`):
 
-    cargo build --release
+    git clone https://github.com/Beloved-Ecosystem-Inc/become-verify
+    cd become-verify
+    cargo build --release --locked
+
+`rust-toolchain.toml` pins the Rust version we build and test with.
 
 It uses only the official pure-Rust SP1 6.8.1 Groth16 verifier. It contains no prover and makes no network calls.
 
@@ -28,7 +32,8 @@ It uses only the official pure-Rust SP1 6.8.1 Groth16 verifier. It contains no p
 
     ./target/release/become-verify completion.bin your.fcidump --level <ordered-level>
 
-The first line is `PASS` or `FAIL` (with the reason). `PASS` means:
+The first line is `PASS` or `FAIL` (with the reason); the exit code is 0 for PASS, 1 for FAIL and 2 for a usage error.
+`PASS` means:
 - the Groth16 proof is genuine and was made by BECOME's checking program (the key above);
 - it is about your file (it carries the SHA-256 of your file, which the checker computes itself);
 - certified lower and upper bounds on the ground-state energy exist for your file, within your ordered accuracy;

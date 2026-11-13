@@ -1,0 +1,4 @@
+[toolchain]
+# The toolchain BECOME builds and tests the checker with (any recent stable also works).
+channel = "1.99.0"
+profile = "minimal"
