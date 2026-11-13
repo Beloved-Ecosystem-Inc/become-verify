@@ -4,6 +4,7 @@ pub struct ProofBin {
     pub vkey_input: String,      // public_inputs[0]: the program vkey as a decimal string
     pub onchain_bytes: Vec<u8>,  // groth16_vkey_hash[..4] ++ hex-decoded encoded_proof (= SP1ProofWithPublicValues::bytes())
     pub public_values: Vec<u8>,
+    #[allow(dead_code)] // read so the file layout is checked to the end; not printed by the CLI
     pub sp1_version: String,
 }
 

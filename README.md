@@ -16,7 +16,8 @@ cargo build --release --locked
 # 2. Save your files in this folder (your job page, or your AI via the BECOME connector, gives the links)
 #    completion.bin   the completion proof (bounds sealed), sent with the "target met" notice
 #    final.bin        the final proof (bounds revealed), after payment
-#    your.fcidump     the FCIDUMP you ordered
+#    your.fcidump     the FCIDUMP you ordered (for a catalog job the BECOME connector's kit gives the public
+#                     catalog link and the file's own name; use that name in place of your.fcidump below)
 
 # 3. Check it is your file: must print the FCIDUMP SHA-256 shown for your order
 ./target/release/become-verify fingerprint your.fcidump
@@ -57,8 +58,21 @@ Proofs are checked against one fixed SP1 program key, built into the checker
 ## Checking with your AI instead
 
 If your AI app has the BECOME connector, ask it "Verify my BECOME job <id>." BECOME's server then runs this same
-checker, at a pinned commit, on your job's files and reports the result. That is a convenience run by BECOME, not an
+checker, at a pinned commit (see Versions), on your job's files and reports the result. That is a convenience run by BECOME, not an
 independent check; running the commands above on your own computer is.
+
+## Versions
+
+BECOME's server (the connector's check) runs the checker built from commit
+[`f3961a9`](https://github.com/Beloved-Ecosystem-Inc/become-verify/commit/f3961a902492c611cdd464824ee83664eed5ddbb),
+the first public release. Later commits on `main` so far only add documentation, the toolchain pin and build-warning
+fixes (code used only by the tests is compiled only for the tests); the checking logic, the program key and the output
+are the same, so either gives the same PASS/FAIL on the same files. To build exactly what the server runs:
+
+```sh
+git checkout f3961a902492c611cdd464824ee83664eed5ddbb
+cargo build --release --locked
+```
 
 ## Tests
 
