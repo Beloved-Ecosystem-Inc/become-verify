@@ -48,11 +48,11 @@ jobs:
         shell: bash
         run: |
           b=$(ls dist/*); d=tests/fixtures/ethanol-sample
-          "$b" fingerprint $d/pcq702_6-31g_cas8e8o.fcidump | grep -qx 14199aece64925c7b73f7e65e42448d7a288ef6f837939a0ed4d159b58000cfe
-          "$b" $d/completion.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; head -1 out.txt | grep -qx PASS
-          "$b" pair $d/completion.bin $d/final.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; head -1 out.txt | grep -qx PASS
+          "$b" fingerprint $d/pcq702_6-31g_cas8e8o.fcidump | tr -d '\r' | grep -qx 14199aece64925c7b73f7e65e42448d7a288ef6f837939a0ed4d159b58000cfe
+          "$b" $d/completion.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; head -1 out.txt | tr -d '\r' | grep -qx PASS
+          "$b" pair $d/completion.bin $d/final.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; head -1 out.txt | tr -d '\r' | grep -qx PASS
           set +e; "$b" pair $d/final.bin $d/completion.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; rc=$?; set -e
-          test $rc -eq 1 && head -1 out.txt | grep -q '^FAIL'
+          test $rc -eq 1 && head -1 out.txt | tr -d '\r' | grep -q '^FAIL'
           echo "completion PASS, pair PASS, swapped pair FAIL"
       - uses: actions/upload-artifact@v4
         with:
