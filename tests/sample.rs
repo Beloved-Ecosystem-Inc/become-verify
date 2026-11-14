@@ -51,9 +51,8 @@ fn fields(b: &[u8]) -> Vec<(String, usize, usize)> {
 fn bump(c: u8) -> u8 { match c { b'0'..=b'8' | b'a'..=b'e' => c + 1, b'9' => b'0', b'f' => b'0', _ => c ^ 1 } }
 
 #[test] fn every_stored_copy_must_match() {
-    // An outside review (Nov 14, 2026) changed one digit of a public-input copy stored in the file and still got PASS
-    // (the verifier rebuilds those inputs and never read the copy). Each stored copy is now compared: change one valid
-    // digit (first, middle and last) of every field, in both files, and the check must FAIL.
+    // Every copy stored in the proof file must equal what the checker rebuilds: change one valid digit (first, middle
+    // and last) of every field, in both files, and the check must FAIL.
     for name in ["completion.bin", "final.bin"] {
         let orig = f(name);
         for (field, a, z) in fields(&orig) {
