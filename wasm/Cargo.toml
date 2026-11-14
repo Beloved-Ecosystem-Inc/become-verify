@@ -1,0 +1,29 @@
+[package]
+name = "become-verify-wasm"
+version = "0.2.0"
+edition = "2021"
+description = "become-verify for the browser: the same checks (../src/lib.rs) compiled to WebAssembly"
+license = "Apache-2.0"
+publish = false
+
+# A crate of its own (own Cargo.lock), so the command-line tool's build is unchanged by it.
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+become-verify = { path = ".." }
+sha2 = "=0.10.9"
+wasm-bindgen = "=0.2.100"
+
+# Deterministic, small output: one codegen unit, no debug info, abort on panic (build.sh also maps local paths away).
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+debug = false
+strip = true
+incremental = false

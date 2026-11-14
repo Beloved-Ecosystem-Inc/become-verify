@@ -1,0 +1,112 @@
+# Ready-to-run become-verify for Linux, macOS and Windows, plus the browser build, from the tagged source.
+# A release is published ONLY when a version tag (v*) is pushed, and the tag must equal the version in Cargo.toml.
+# On a pull request that touches the build, every binary is built and smoke-tested, but nothing is published.
+name: release
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths: [".github/workflows/release.yml", "src/**", "wasm/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml"]
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-x86_64,   os: ubuntu-24.04,     target: x86_64-unknown-linux-musl, exe: "",     run: true }
+          - { name: linux-arm64,    os: ubuntu-24.04-arm, target: aarch64-unknown-linux-musl, exe: "",    run: true }
+          - { name: macos-arm64,    os: macos-15,         target: aarch64-apple-darwin,      exe: "",     run: true }
+          - { name: macos-x86_64,   os: macos-15,         target: x86_64-apple-darwin,       exe: "",     run: false }
+          - { name: windows-x86_64, os: windows-2022,     target: x86_64-pc-windows-msvc,    exe: ".exe", run: true }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: musl tools
+        if: contains(matrix.target, 'musl')
+        run: sudo apt-get update -q && sudo apt-get install -y -q musl-tools
+      - name: Toolchain (rust-toolchain.toml) and target
+        shell: bash
+        run: |
+          rustup toolchain install
+          rustup target add ${{ matrix.target }}
+      - name: Build
+        shell: bash
+        env:
+          RUSTFLAGS: "--remap-path-prefix=${{ github.workspace }}=/become-verify"
+        run: cargo build --release --locked --target ${{ matrix.target }}
+      - name: Name the file
+        shell: bash
+        run: |
+          v=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          mkdir dist
+          cp target/${{ matrix.target }}/release/become-verify${{ matrix.exe }} "dist/become-verify-v$v-${{ matrix.name }}${{ matrix.exe }}"
+          ls -l dist
+      - name: Smoke test on the sample proofs (PASS / FAIL only; nothing else printed)
+        if: matrix.run
+        shell: bash
+        run: |
+          b=$(ls dist/*); d=tests/fixtures/ethanol-sample
+          "$b" fingerprint $d/pcq702_6-31g_cas8e8o.fcidump | grep -qx 14199aece64925c7b73f7e65e42448d7a288ef6f837939a0ed4d159b58000cfe
+          "$b" $d/completion.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; head -1 out.txt | grep -qx PASS
+          "$b" pair $d/completion.bin $d/final.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; head -1 out.txt | grep -qx PASS
+          set +e; "$b" pair $d/final.bin $d/completion.bin $d/pcq702_6-31g_cas8e8o.fcidump --level 159 > out.txt; rc=$?; set -e
+          test $rc -eq 1 && head -1 out.txt | grep -q '^FAIL'
+          echo "completion PASS, pair PASS, swapped pair FAIL"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.name }}
+          path: dist/*
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/v') && 7 || 3 }}
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain and wasm-bindgen-cli 0.2.100
+        run: |
+          rustup toolchain install
+          rustup target add wasm32-unknown-unknown
+          cargo install wasm-bindgen-cli --version 0.2.100 --locked
+      - name: Build and compare with wasm/SHA256SUMS
+        run: |
+          wasm/build.sh
+          (cd wasm && sha256sum -c SHA256SUMS)
+          v=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          mkdir dist && cp wasm/pkg/become_verify_wasm_bg.wasm wasm/pkg/become_verify_wasm.js dist/
+          tar -C wasm/pkg -czf "dist/become-verify-wasm-v$v.tar.gz" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner become_verify_wasm_bg.wasm become_verify_wasm.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wasm
+          path: dist/*
+          retention-days: ${{ startsWith(github.ref, 'refs/tags/v') && 7 || 3 }}
+  publish:
+    # Only for a pushed version tag. Never on a pull request.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, wasm]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write       # create the release
+      id-token: write       # build provenance attestation
+      attestations: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: The tag must equal Cargo.toml's version
+        run: |
+          v=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
+          test "${GITHUB_REF_NAME}" = "v$v" || { echo "tag ${GITHUB_REF_NAME} != v$v (Cargo.toml)"; exit 1; }
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: SHA256SUMS
+        run: |
+          cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "become-verify $GITHUB_REF_NAME" --notes "Ready-to-run become-verify built by GitHub Actions from tag $GITHUB_REF_NAME (commit $GITHUB_SHA). Check a download with SHA256SUMS, and its build provenance with: gh attestation verify <file> --repo $GITHUB_REPOSITORY. See README.md for how to run it."

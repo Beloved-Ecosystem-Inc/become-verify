@@ -1,0 +1,39 @@
+# Tests on every pull request and on main: the command-line tool's tests (including the real ethanol sample proofs),
+# and the browser build: rebuilt from source, compared byte for byte with wasm/SHA256SUMS, then run in Node.
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain (rust-toolchain.toml)
+        run: rustup toolchain install
+      - name: cargo test
+        run: cargo test --release --locked
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Toolchain and wasm-bindgen-cli 0.2.100
+        run: |
+          rustup toolchain install
+          rustup target add wasm32-unknown-unknown
+          cargo install wasm-bindgen-cli --version 0.2.100 --locked
+      - name: Build (wasm/build.sh)
+        run: wasm/build.sh
+      - name: Same bytes as wasm/SHA256SUMS (reproducible build)
+        run: cd wasm && sha256sum -c SHA256SUMS
+      - name: Browser build on the sample proofs (Node)
+        run: |
+          cargo build --release --locked
+          BV_CLI="$PWD/target/release/become-verify" node --test wasm/test/node-test.mjs > wasm-test.log 2>&1 || { grep -E '^not ok|# (pass|fail)' wasm-test.log; exit 1; }
+          grep -E '^# (tests|pass|fail)|^ℹ (tests|pass|fail)' wasm-test.log
