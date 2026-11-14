@@ -1,0 +1,4 @@
+# Proof files and FCIDUMPs are checked byte for byte: never convert line endings (Windows checkouts).
+*.fcidump binary
+*.bin binary
+tests/fixtures/** binary

@@ -123,7 +123,7 @@ pub fn accept(pv: &Pv, q: &Question, mode: u64, target: i64) -> Result<Accepted,
 }
 
 /// decode + accept on the raw public-value bytes.
-#[cfg(test)] // used only by the tests below; the CLI checks proofs through accept()
+#[cfg(test)] // used only by the tests below; the checks go through accept()
 pub fn check_pub(bs: &[u8], q: &Question, mode: u64, target: i64) -> Result<(Pv, Accepted), String> {
     let pv = decode_pvc(bs)?;
     let a = accept(&pv, q, mode, target)?;
@@ -148,7 +148,7 @@ pub fn check_set(set: &[Accepted]) -> Result<Vec<i64>, String> {
 }
 
 /// Levels with an accepted completion proof whose full proof is missing from the set (pending, not revealed).
-#[cfg(test)] // used only by the tests below; the CLI checks proofs through accept()
+#[cfg(test)] // used only by the tests below; the checks go through accept()
 pub fn pending_levels(set: &[Accepted]) -> Vec<i64> {
     let mut p: Vec<i64> = set.iter().filter(|a| a.md == MODE_COMPLETION)
         .filter(|a| !set.iter().any(|b| b.md == MODE_FULL && b.target == a.target)).map(|a| a.target).collect();
@@ -165,7 +165,7 @@ pub fn parse_target(s: &str) -> Result<i64, String> {
 }
 
 /// The mode: "0" / "full" or "1" / "completion".
-#[cfg(test)] // used only by the tests below; the CLI checks proofs through accept()
+#[cfg(test)] // used only by the tests below; the checks go through accept()
 pub fn parse_mode(s: &str) -> Result<u64, String> {
     match s {
         "0" | "full" => Ok(MODE_FULL),
@@ -180,7 +180,7 @@ pub fn hex32(b: &[u8; 32]) -> String { b.iter().map(|x| format!("{:02x}", x)).co
 
 /// Human-readable decoded fields (one line per field), for the verifier's output.  C is printed in hex so a completion
 /// proof can be matched to the full proof published later.
-#[cfg(test)] // used only by the tests below; the CLI checks proofs through accept()
+#[cfg(test)] // used only by the tests below; the checks go through accept()
 pub fn describe(pv: &Pv) -> String {
     let d = match digest_of_d(&pv.d) { Ok(dg) => hex32(&dg), Err(e) => format!("INVALID ({})", e) };
     let c = match check_c(&pv.c) { Ok(()) => c_hex(&pv.c), Err(e) => format!("INVALID ({})", e) };

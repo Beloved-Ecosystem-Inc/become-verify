@@ -16,7 +16,18 @@ checked against one fixed program key, built into the checker:
 
     0x002904457a39ce1123f797598dfbac0fd12d7844be883c7154f37de353c81a2b
 
-## Build the checker
+## Get the checker
+
+Three ways, all running the same checks on your own computer:
+
+1. **Download** a ready-to-run program for Linux, macOS or Windows from the
+   [Releases page](https://github.com/Beloved-Ecosystem-Inc/become-verify/releases) and check it against `SHA256SUMS`
+   (README.md, "Download"). No Rust needed. Use it in place of `./target/release/become-verify` below.
+2. **In your browser**, on BECOME's "Verify in your browser" page: the same checks compiled to WebAssembly (`wasm/`),
+   run inside the page. Your proof files and FCIDUMP are read in the browser and not sent anywhere.
+3. **Build from source**, as below.
+
+### Build from source
 
 Install Rust (https://rustup.rs), then in this repository's folder (the one with `Cargo.toml`):
 
