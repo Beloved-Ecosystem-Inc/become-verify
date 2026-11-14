@@ -4,8 +4,51 @@ pub struct ProofBin {
     pub vkey_input: String,      // public_inputs[0]: the program vkey as a decimal string
     pub onchain_bytes: Vec<u8>,  // groth16_vkey_hash[..4] ++ hex-decoded encoded_proof (= SP1ProofWithPublicValues::bytes())
     pub public_values: Vec<u8>,
-    #[allow(dead_code)] // read so the file layout is checked to the end; not printed by the CLI
     pub sp1_version: String,
+    // Stored copies the Groth16 check itself does not read (it rebuilds them from the public values, the pinned key
+    // and encoded_proof); check_stored() requires each to match exactly, so an edited copy can't print PASS.
+    pub public_inputs: [String; 5], // [vkey, public-values digest, exit code, vk root, proof nonce] (decimal)
+    pub encoded: String,            // encoded_proof as stored (hex)
+    pub raw: String,                // raw_proof as stored (hex): gnark's serialization of the same proof points
+    pub vk_hash: [u8; 32],          // groth16_vkey_hash: sha256 of the Groth16 verifying key
+}
+
+/// The SP1 circuit version string of the release proofs (SDK 6.8.1).
+pub const CIRCUIT_VERSION: &str = "v6.1.0";
+/// encoded_proof: exit code, vk root, proof nonce (32 bytes each) and the eight 32-byte Groth16 proof words.
+const ENCODED_BYTES: usize = 96 + 256;
+/// raw_proof tail after the 256 bytes of proof points: a zero commitment count (4 bytes) and a zero commitment
+/// proof of knowledge (64 bytes); the release circuit has no commitments.
+const RAW_TAIL: usize = 4 + 64;
+
+fn hexs(b: &[u8]) -> String { b.iter().map(|x| format!("{:02x}", x)).collect() }
+/// A stored public input must be the canonical decimal of these 32 big-endian bytes (no sign, no leading zeros).
+fn dec_is(d: &str, bytes: &[u8]) -> bool {
+    (d == "0" || !d.starts_with('0')) && dec_to_hex32(d).as_deref() == Some(format!("0x{}", hexs(bytes)).as_str())
+}
+
+impl ProofBin {
+    /// Every redundant copy in the file must equal what the checker rebuilds or pins. `vkey` is the pinned program key
+    /// (0x + 64 hex). Purely a consistency check: the Groth16 verification is separate and unchanged.
+    pub fn check_stored(&self, vkey: &str) -> Result<(), String> {
+        let f = |w: &str| Err(format!("proof file: the stored {} does not match the proof (edited file?)", w));
+        if self.sp1_version != CIRCUIT_VERSION { return f("circuit version"); }
+        let pin = vkey.strip_prefix("0x").unwrap_or(vkey);
+        if !(self.public_inputs[0] == "0" || !self.public_inputs[0].starts_with('0'))
+            || dec_to_hex32(&self.public_inputs[0]).as_deref() != Some(format!("0x{}", pin).as_str()) { return f("program key (public input 0)"); }
+        use sha2::{Digest, Sha256};
+        let vkh: [u8; 32] = Sha256::digest(*sp1_verifier::GROTH16_VK_BYTES).into();
+        if self.vk_hash != vkh { return f("Groth16 key hash"); }
+        let enc = match unhex(&self.encoded) { Ok(e) => e, Err(_) => return f("encoded proof") };
+        if enc.len() != ENCODED_BYTES || self.encoded != hexs(&enc) { return f("encoded proof"); }
+        if !dec_is(&self.public_inputs[1], &sp1_verifier::hash_public_inputs(&self.public_values)) { return f("public-values digest (public input 1)"); }
+        for (k, name) in [(2usize, "exit code (public input 2)"), (3, "vk root (public input 3)"), (4, "proof nonce (public input 4)")] {
+            if !dec_is(&self.public_inputs[k], &enc[32 * (k - 2)..32 * (k - 1)]) { return f(name); }
+        }
+        let mut raw = enc[96..].to_vec(); raw.extend([0u8; RAW_TAIL]);
+        if self.raw != hexs(&raw) { return f("raw proof"); }
+        Ok(())
+    }
 }
 
 struct R<'a> { b: &'a [u8], i: usize }
@@ -39,8 +82,8 @@ pub fn parse(b: &[u8]) -> Result<ProofBin, String> {
     let mut inputs = Vec::new();
     for _ in 0..5 { inputs.push(r.string()?); }
     let encoded = r.string()?;
-    let _raw = r.string()?;
-    let vk_hash = r.take(32)?.to_vec();
+    let raw = r.string()?;
+    let vk_hash: [u8; 32] = r.take(32)?.try_into().unwrap();
     let public_values = r.bytes()?.to_vec();
     let sp1_version = r.string()?;
     let tee = r.take(1)?[0];
@@ -48,7 +91,8 @@ pub fn parse(b: &[u8]) -> Result<ProofBin, String> {
     if r.i != b.len() { return Err("proof file: trailing bytes after the proof".into()) }
     let mut onchain = vk_hash[..4].to_vec();
     onchain.extend(unhex(&encoded)?);
-    Ok(ProofBin { vkey_input: inputs[0].clone(), onchain_bytes: onchain, public_values, sp1_version })
+    let public_inputs: [String; 5] = inputs.try_into().unwrap();
+    Ok(ProofBin { vkey_input: public_inputs[0].clone(), onchain_bytes: onchain, public_values, sp1_version, public_inputs, encoded, raw, vk_hash })
 }
 
 /// Decimal string (< 2^256) -> "0x" + 64 hex digits, to compare public input 0 with the pinned vkey.

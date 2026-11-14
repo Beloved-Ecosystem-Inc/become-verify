@@ -49,6 +49,7 @@ pub fn check_proof(raw: &[u8], q: &pv::Question, mode: Option<u64>, ordered: i64
     if proofbin::dec_to_hex32(&p.vkey_input).as_deref() != Some(VKEY) {
         return Err(format!("not a proof of the BECOME main_xc program (key {})", VKEY));
     }
+    p.check_stored(VKEY)?;
     if let Err(e) = sp1_verifier::Groth16Verifier::verify(&p.onchain_bytes, &p.public_values, VKEY, *sp1_verifier::GROTH16_VK_BYTES) {
         return Err(format!("the Groth16 proof does not verify: {}", e));
     }
