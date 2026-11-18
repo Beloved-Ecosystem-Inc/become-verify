@@ -2,6 +2,7 @@
 # crates in Cargo.lock. Each one is a pull request for review; nothing merges on its own.
 # sp1-verifier (the Groth16 verifier the checker is built on) and wasm-bindgen (the browser build, whose bytes are
 # published in wasm/SHA256SUMS) stay at the released versions: changing either needs a new release, done by hand.
+# sha2 gets patch updates only: a 0.x minor bump (like 0.10 -> 0.11) is breaking and must change both lock files at once.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -15,6 +16,8 @@ updates:
     ignore:
       - dependency-name: sp1-verifier
       - dependency-name: wasm-bindgen
+      - dependency-name: sha2
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
   - package-ecosystem: cargo
     directory: /wasm
     schedule:
@@ -22,3 +25,5 @@ updates:
     ignore:
       - dependency-name: sp1-verifier
       - dependency-name: wasm-bindgen
+      - dependency-name: sha2
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
