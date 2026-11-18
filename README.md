@@ -44,10 +44,7 @@ in progress. The proof covers the closed-shell sector (MS2 = 0), whatever MS2 yo
 ## What you're trusting
 
 - SP1 6.8.1 and its Groth16 setup.
-- The hand-written Coq model of the SP1 machine.
-- The release gate tying the program key to the proved program.
-- The Coq kernel.
-- The `sp1-verifier` crate, the Rust toolchain and the crates in `Cargo.lock`.
+- BECOME's checking program, proven in Coq.
 - SHA-256 and Poseidon2 (KoalaBear).
 
 Report problems via [SECURITY.md](SECURITY.md). License: Apache-2.0 ([LICENSE](LICENSE)).
