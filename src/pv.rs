@@ -10,7 +10,7 @@
 //   word 14  md     mode: 0 = final proof (bounds in clear), 1 = completion proof (bounds hidden)
 //   word 15  t      accuracy level of the proof (signed, x 1e-12 hartree)
 //   word 16  ac     accept bit, computed by the program: v == 1, lv == 1, l <= u, 0 <= t, u - l <= t
-//   words 17..24  C0..C7  commitment to (l, u, r): Poseidon2 over the KoalaBear field, each word < p
+//   words 17..24  C0..C7  commitment to the bounds: Poseidon2 over the KoalaBear field, each word < p
 // An accepted proof certifies, by BECOME's Coq proof, that the bounds hold for the file whose SHA-256 is D.
 
 pub const PV_WORDS: usize = 25;
@@ -88,7 +88,7 @@ pub fn acc_met(u: i64, l: i64, t: i64) -> bool {
 }
 
 /// What an accepted proof certifies: the run holds bounds (l, u) with ClaimX b target l u for
-/// the data D and C = Poseidon2(l, u, r0).  In mode 0 `u`, `l` are those bounds; in mode 1 they are 0 (hidden) and only
+/// the data D and C, the Poseidon2 commitment to them.  In mode 0 `u`, `l` are those bounds; in mode 1 they are 0 (hidden) and only
 /// `c` speaks for them.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Accepted { pub md: u64, pub target: i64, pub u: i64, pub l: i64, pub d: [u64; 8], pub c: [u64; 8] }

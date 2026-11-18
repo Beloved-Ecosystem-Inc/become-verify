@@ -47,21 +47,42 @@ cargo build --release --locked        # Rust from https://rustup.rs; the program
 `<level>` is the accuracy you ordered, in units of 10^-12 hartree: Standard `1593601437`, Precise `1593601`,
 Ultra-precise `159`.
 
-The first line is `PASS` or `FAIL: <reason>` (exit code 0 for PASS, 1 for FAIL, 2 for a usage error). `PASS` means the
+The first line is `PASS` or `FAIL: <reason>` (exit code 0 for PASS, 1 for FAIL, 2 for a usage error such as a missing
+argument). A `--level` value that isn't a whole number of 0 or more, or a file that can't be read, is reported as
+`FAIL: <reason>` with exit code 1. `PASS` means the
 Groth16 proof verifies under BECOME's program key
 `0x002904457a39ce1123f797598dfbac0fd12d7844be883c7154f37de353c81a2b` (built into the checker), it is about your file
 (its SHA-256), and its level meets your order. A pair `PASS` also means both proofs carry the same commitment, so the
-revealed bounds are the ones sealed before payment, and prints them. You don't need the random value: the pair check's
-equality of the commitment ties the revealed bounds to the sealed ones.
+revealed bounds are the ones sealed before payment, and it prints them.
+
+How far the proof goes today: that a pair `PASS` ties the revealed bounds to the sealed ones is proven in Coq at the
+level of the program's specification. Restating that proof for the program as the machine runs it is still in
+progress.
+
+The proved statement is about the closed-shell sector: states with NELEC/2 electrons of each spin (MS2 = 0). The
+checker reads NORB and NELEC from your file's header but not MS2, so for a file whose header gives MS2 other than 0,
+a `PASS` is about that file's closed-shell ground state, not the spin state the header names.
 
 BECOME's connector can also run this check on its server (v0.2.0, commit `325f346`); that is a convenience, not an
 independent check.
 
 ## What you're trusting
 
-- SP1 6.8.1 and its Groth16 setup.
-- BECOME's checking program, whose soundness is proven in Coq (closed-shell sector, MS2 = 0).
+- SP1 6.8.1: its Groth16 setup, and that SP1 runs a program the way the hand-written Coq model of the SP1 machine,
+  which the proof is carried out against, describes.
+- BECOME's checking program, whose soundness is proven in Coq (closed-shell sector, MS2 = 0; see above for what is
+  proven at which level).
+- BECOME's release gate, which checks that the program key built into this checker belongs to exactly the program
+  image the Coq proof is about.
+- The Coq proof checker (its kernel) that checked the proof.
+- The official `sp1-verifier` crate (6.8.1) that checks the Groth16 proof here, and the Rust toolchain
+  (`rust-toolchain.toml`) and crates (`Cargo.lock`) this checker is built with; for the ready-made downloads, also
+  GitHub Actions, which builds them (see the attestation above).
 - SHA-256 and Poseidon2 (KoalaBear) as hash functions.
+
+## Reporting a problem
+
+See [SECURITY.md](SECURITY.md).
 
 ## License
 
