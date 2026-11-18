@@ -22,7 +22,7 @@ jobs:
           - { name: windows-x86_64, os: windows-2022,     target: x86_64-pc-windows-msvc,    exe: ".exe", run: true }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: musl tools
         if: contains(matrix.target, 'musl')
         run: sudo apt-get update -q && sudo apt-get install -y -q musl-tools
@@ -62,7 +62,7 @@ jobs:
   wasm:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Toolchain and wasm-bindgen-cli 0.2.100
         run: |
           rustup toolchain install
@@ -90,7 +90,7 @@ jobs:
       id-token: write       # build provenance attestation
       attestations: write
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: The tag must equal Cargo.toml's version
         run: |
           v=$(sed -n 's/^version = "\(.*\)"/\1/p' Cargo.toml | head -1)
