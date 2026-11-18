@@ -1,5 +1,7 @@
 # Weekly update pull requests for the GitHub Actions the workflows use (pinned to full commit SHAs) and for the Rust
 # crates in Cargo.lock. Each one is a pull request for review; nothing merges on its own.
+# sp1-verifier (the Groth16 verifier the checker is built on) and wasm-bindgen (the browser build, whose bytes are
+# published in wasm/SHA256SUMS) stay at the released versions: changing either needs a new release, done by hand.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -10,7 +12,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: sp1-verifier
+      - dependency-name: wasm-bindgen
   - package-ecosystem: cargo
     directory: /wasm
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: sp1-verifier
+      - dependency-name: wasm-bindgen
