@@ -11,7 +11,7 @@ publish = false
 # Groth16 only: the compressed-proof verifier (the default "full" feature) is not needed, which also lets the same
 # code build for WebAssembly (wasm/).
 sp1-verifier = { version = "=6.8.1", default-features = false }
-sha2 = "=0.10.9"
+sha2 = "=0.11.1"
 
 [lib]
 name = "become_verify"
