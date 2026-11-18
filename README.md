@@ -38,13 +38,10 @@ cargo build --release --locked    # target/release/become-verify
 `PASS` means the proof verifies under BECOME's built-in program key, is about your file, and meets your level; a pair
 `PASS` also means the revealed bounds are the ones sealed before payment. Otherwise it prints `FAIL: <reason>` (exit 1).
 
-The link between sealed and revealed bounds is proven in Coq at the specification level; the machine-level proof is
-in progress. The proof covers the closed-shell sector (MS2 = 0), whatever MS2 your file's header gives.
-
 ## What you're trusting
 
 - SP1 6.8.1 and its Groth16 setup.
-- BECOME's checking program, proven in Coq.
+- BECOME's checking program, whose soundness is proven in Coq (closed-shell sector, MS2 = 0).
 - SHA-256 and Poseidon2 (KoalaBear).
 
 Report problems via [SECURITY.md](SECURITY.md). License: Apache-2.0 ([LICENSE](LICENSE)).
