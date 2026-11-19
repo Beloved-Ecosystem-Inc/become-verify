@@ -1,6 +1,6 @@
 # become-verify
 
-Checks BECOME ground-state energy proofs against your FCIDUMP file, offline.
+Checks BECOME proofs of lower and upper bounds on the lowest energy of your FCIDUMP file's Hamiltonian, offline.
 
 [Verify in your browser](https://become.belovedecosystem.com/energy/verify/) runs the same checks; your files stay on
 your computer.
@@ -33,14 +33,16 @@ cargo build --release --locked    # target/release/become-verify
 ./become-verify pair completion.bin final.bin your.fcidump --level <level>   # after you pay
 ```
 
-`<level>` (10^-12 hartree): Standard `1593601437`, Precise `1593601`, Ultra-precise `159`.
+`--level N` means the bounds are at most N × 10^-12 hartree apart (u − l ≤ N × 10^-12 Ha): Standard `1593601437`,
+Precise `1593601`, Ultra-precise `159` (1.59 × 10^-10 Ha).
 
 `PASS` means the proof verifies under BECOME's built-in program key, is about your file, and meets your level; a pair
 `PASS` also means the revealed bounds are the ones sealed before payment. Otherwise it prints `FAIL: <reason>` (exit 1).
 
 ## What you're trusting
 
-- SP1 6.8.1 and its Groth16 setup.
+- SP1 6.8.1 and its Groth16 setup. (Proofs carry SP1's circuit label `v6.1.0`, which 6.8.1 writes; become-verify
+  requires it.)
 - BECOME's checking program, whose soundness is proven in Coq (closed-shell sector, MS2 = 0).
 - SHA-256 and Poseidon2 (KoalaBear).
 
