@@ -1,5 +1,6 @@
 # Tests on every pull request and on main: the command-line tool's tests (including the real ethanol sample proofs),
-# and the browser build: rebuilt from source, compared byte for byte with wasm/SHA256SUMS, then run in Node.
+# the browser build: rebuilt from source, compared byte for byte with wasm/SHA256SUMS, then run in Node;
+# and the Coq question files with the ethanol sample's data layer (question/check.sh).
 name: ci
 on:
   pull_request:
@@ -37,3 +38,11 @@ jobs:
           cargo build --release --locked
           BV_CLI="$PWD/target/release/become-verify" node --test wasm/test/node-test.mjs > wasm-test.log 2>&1 || { grep -E '^not ok|# (pass|fail)' wasm-test.log; exit 1; }
           grep -E '^# (tests|pass|fail)|^ℹ (tests|pass|fail)' wasm-test.log
+  question:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Coq 8.18.0 (Ubuntu 24.04)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends coq=8.18.0+dfsg-1build2
+      - name: Question and ethanol data layer (question/check.sh)
+        run: question/check.sh tests/fixtures/ethanol-sample/pcq702_6-31g_cas8e8o.fcidump ETH | tee check.log && grep -qx 'OK 14199aece64925c7b73f7e65e42448d7a288ef6f837939a0ed4d159b58000cfe' check.log
