@@ -46,4 +46,6 @@ Precise `1593601`, Ultra-precise `159` (1.59 × 10^-10 Ha).
 - BECOME's checking program, whose soundness is proven in Coq (closed-shell sector, MS2 = 0).
 - SHA-256 and Poseidon2 (KoalaBear).
 
+The question itself, in Coq, and a check that your FCIDUMP is the file it's about: [question/](question/).
+
 Report problems via [SECURITY.md](SECURITY.md). License: Apache-2.0 ([LICENSE](LICENSE)).
