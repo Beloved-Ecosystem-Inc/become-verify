@@ -40,9 +40,21 @@ jobs:
           grep -E '^# (tests|pass|fail)|^ℹ (tests|pass|fail)' wasm-test.log
   question:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Coq 8.18.0 (Ubuntu 24.04)
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends coq=8.18.0+dfsg-1build2
+      - name: Coq 8.18.0 (coqorg/coq:8.18.0, pinned by digest)
+        run: |
+          img=coqorg/coq@sha256:b0ddec11e839ab96fd514040d6f2a3a1f47b9e2a3999cc5c7f2527d1925f9126
+          docker pull -q "$img"
+          mkdir -p "$RUNNER_TEMP/bin"
+          for t in coqc coqchk; do
+            printf '#!/bin/sh\nexec docker run --rm --ulimit stack=-1:-1 -v "$PWD:$PWD" -w "$PWD" %s %s "$@"\n' "$img" "$t" > "$RUNNER_TEMP/bin/$t"
+            chmod +x "$RUNNER_TEMP/bin/$t"
+          done
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Question and ethanol data layer (question/check.sh)
-        run: question/check.sh tests/fixtures/ethanol-sample/pcq702_6-31g_cas8e8o.fcidump ETH | tee check.log && grep -qx 'OK 14199aece64925c7b73f7e65e42448d7a288ef6f837939a0ed4d159b58000cfe' check.log
+        run: |
+          umask 000
+          question/check.sh tests/fixtures/ethanol-sample/pcq702_6-31g_cas8e8o.fcidump ETH | tee check.log
+          grep -qx 'OK 14199aece64925c7b73f7e65e42448d7a288ef6f837939a0ed4d159b58000cfe' check.log
